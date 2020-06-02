@@ -10,7 +10,7 @@ public class FlashCardsSet{
         this.name = name;
         this.description = description;
         this.count = 0;
-        this.flashCards = new ArrayList<FlashCardsSeta>();
+        this.flashCards = new ArrayList<FlashCard   >();
     }
 
     public FlashCardsSet(String name){
