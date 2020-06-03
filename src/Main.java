@@ -1,16 +1,15 @@
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import javafx.util.Pair;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class Main extends Application{
@@ -80,7 +79,10 @@ public class Main extends Application{
 
 
     private void addNewSet(){
-        Dialog<Pair<String, String>> dialog = new Dialog<>();
+        boolean[] setAdded = {false};
+        FlashCardsSet[] newSet = {null};
+
+        Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Add new Flash Card set");
         dialog.setHeaderText(null);
 
@@ -108,23 +110,89 @@ public class Main extends Application{
 
         dialog.setResultConverter(dialogButton -> {
             if(dialogButton == bAdd){
-                FlashCardsSet newSet;
                 if(tfDescription.getLength() > 0){
-                    newSet = new FlashCardsSet(tfName.getText(), tfDescription.getText());
+                    newSet[0] = new FlashCardsSet(tfName.getText(), tfDescription.getText());
                 }else{
-                    newSet = new FlashCardsSet(tfName.getText());
+                    newSet[0] = new FlashCardsSet(tfName.getText());
                 }
 
-                tvFlashCardsSets.getItems().add(newSet);
+                tvFlashCardsSets.getItems().add(newSet[0]);
+
+                setAdded[0] = true;
             }
             return null;
         });
 
-        Optional<Pair<String, String>> result = dialog.showAndWait();
+        dialog.showAndWait();
 
-        result.ifPresent(usernamePassword -> {
-            System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
+        if(setAdded[0])
+            addFlashCard(newSet[0]);
+    }
+
+    private void addFlashCard(FlashCardsSet setToAdd){
+        boolean[] addNext = {false};
+
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Add new Flash Card");
+        dialog.setHeaderText(null);
+
+        ButtonType bAdd = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(bAdd, ButtonType.CANCEL);
+
+        GridPane gpDialog = new GridPane();
+
+        TextField tfWord = new TextField();
+        TextField tfTranslation = new TextField();
+        TextField tfDescription = new TextField();
+
+        gpDialog.add(new Label("Word:"), 0, 0);
+        gpDialog.add(tfWord, 1, 0);
+        gpDialog.add(new Label("Translation:"), 0, 1);
+        gpDialog.add(tfTranslation, 1, 1);
+        gpDialog.add(new Label("Description:"), 0, 2);
+        gpDialog.add(tfDescription, 1, 2);
+
+        AtomicBoolean tfWordIsEmpty = new AtomicBoolean(true);
+        AtomicBoolean tfTranIsEmpty = new AtomicBoolean(true);
+
+        Node addButton = dialog.getDialogPane().lookupButton(bAdd);
+        addButton.setDisable(tfWordIsEmpty.get() && tfTranIsEmpty.get());
+
+        tfWord.textProperty().addListener((observable, oldValue, newValue) -> {
+            tfWordIsEmpty.set(newValue.trim().isEmpty());
+            addButton.setDisable(tfWordIsEmpty.get() || tfTranIsEmpty.get());
+
         });
+        tfTranslation.textProperty().addListener((observable, oldValue, newValue) -> {
+            tfTranIsEmpty.set(newValue.trim().isEmpty());
+            addButton.setDisable(tfWordIsEmpty.get() || tfTranIsEmpty.get());
+        });
+
+        dialog.getDialogPane().setContent(gpDialog);
+
+        dialog.setResultConverter(dialogButton -> {
+            if(dialogButton == bAdd){
+                FlashCard newCard;
+                if(tfDescription.getLength() > 0){
+                    newCard = new FlashCard(tfWord.getText(), tfTranslation.getText(), tfDescription.getText());
+                }else{
+                    newCard = new FlashCard(tfWord.getText(), tfTranslation.getText());
+                }
+
+                setToAdd.getFlashCards().add(newCard);
+                setToAdd.setCount(setToAdd.getCount()+1);
+                //TODO: Update value in TableView cell
+
+                addNext[0] = true;
+
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+        if(addNext[0])
+            addFlashCard(setToAdd);
+
     }
 
     private void deleteSet(FlashCardsSet set){

@@ -29,4 +29,12 @@ public class FlashCardsSet{
     public int getCount(){
         return count;
     }
+
+    public void setCount(int count){
+        this.count = count;
+    }
+
+    public ArrayList<FlashCard> getFlashCards(){
+        return flashCards;
+    }
 }

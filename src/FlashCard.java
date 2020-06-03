@@ -9,6 +9,10 @@ public class FlashCard{
         this.description = description;
     }
 
+    public FlashCard(String word, String translation){
+        this(word, translation, null);
+    }
+
     public String getWord(){
         return word;
     }
