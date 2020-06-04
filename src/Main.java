@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -17,11 +18,14 @@ public class Main extends Application{
         launch(args);
     }
 
+    private Stage stWindow;
     private Scene scMenu, scPreview, scGame;
     private TableView<FlashCardsSet> tvFlashCardsSets;
+    private TableView<FlashCard> tvFlashCards;
 
     @Override
     public void start(Stage stage) throws Exception{
+        stWindow = stage;
         GridPane gpMenu = new GridPane();
 
         TableColumn<FlashCardsSet, String> tcName = new TableColumn<>("Name");
@@ -57,7 +61,8 @@ public class Main extends Application{
         gpMenu.add(bEdit, 2, 1);
 
         Button bPreview = new Button("Preview");
-        bPreview.setOnAction(e -> previewSet());
+        bPreview.setOnAction(e -> previewSet(tvFlashCardsSets.getSelectionModel().getSelectedItem()));
+        bPreview.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
         gpMenu.add(bPreview, 3, 1);
 
         Button bStart = new Button("Start");
@@ -66,8 +71,8 @@ public class Main extends Application{
 
 
         scMenu= new Scene(gpMenu);
-        stage.setScene(scMenu);
-        stage.show();
+        stWindow.setScene(scMenu);
+        stWindow.show();
     }
 
     public ObservableList<FlashCardsSet> flashCardsSets(){
@@ -207,11 +212,69 @@ public class Main extends Application{
         }
     }
 
+    private void deleteCard(FlashCard card){
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Flash Cards");
+        alert.setHeaderText(null);
+        alert.setContentText("Do you want to delete this FlashCard?");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if(result.get() == ButtonType.OK){
+            tvFlashCards.getItems().remove(card);
+        }
+    }
+
     private void editSet(){
 
     }
 
-    private void previewSet(){
+    private void editCard(){
+
+    }
+
+    private void previewSet(FlashCardsSet previewSet){
+        GridPane gpPreview = new GridPane();
+
+        TableColumn<FlashCard, String> tcWord = new TableColumn<>("Word");
+        tcWord.setCellValueFactory(new PropertyValueFactory<>("word"));
+
+        TableColumn<FlashCard, String> tcTranslation = new TableColumn<>("Translation");
+        tcTranslation.setCellValueFactory(new PropertyValueFactory<>("translation"));
+
+        TableColumn<FlashCard, String> tcDescription = new TableColumn<>("Description");
+        tcDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
+
+        tvFlashCards = new TableView();
+        ObservableList<FlashCard> flashCards = FXCollections.observableArrayList();
+        flashCards.addAll(previewSet.getFlashCards());
+        tvFlashCards.setItems(flashCards);
+        tvFlashCards.getColumns().addAll(tcWord, tcTranslation, tcDescription);
+
+        gpPreview.add(tvFlashCards, 0 ,0, 5, 1);
+
+        Button bBack = new Button("Back");
+        bBack.setOnAction(e -> stWindow.setScene(scMenu));
+        gpPreview.add(bBack, 0, 1);
+
+        Button bAdd = new Button("Add");
+        bAdd.setOnAction(e -> addFlashCard(previewSet));
+        gpPreview.add(bAdd, 1, 1);
+        //TODO: Update flash cards in preview after adding new card
+
+        Button bDelete = new Button("Delete");
+        bDelete.setOnAction(e -> {
+            FlashCard selected = tvFlashCards.getSelectionModel().getSelectedItem();
+            if(selected != null)
+                deleteCard(selected);
+        });
+        gpPreview.add(bDelete, 2, 1);
+
+        Button bEdit = new Button("Edit");
+        bEdit.setOnAction(e -> editCard());
+        gpPreview.add(bEdit, 3, 1);
+
+        scPreview= new Scene(gpPreview);
+        stWindow.setScene(scPreview);
 
     }
 
