@@ -131,10 +131,10 @@ public class Main extends Application{
         dialog.showAndWait();
 
         if(setAdded[0])
-            addFlashCard(newSet[0]);
+            addFlashCard(newSet[0], false);
     }
 
-    private void addFlashCard(FlashCardsSet setToAdd){
+    private void addFlashCard(FlashCardsSet setToAdd, boolean inPreview){
         boolean[] addNext = {false};
 
         Dialog<String> dialog = new Dialog<>();
@@ -186,7 +186,10 @@ public class Main extends Application{
 
                 setToAdd.getFlashCards().add(newCard);
                 setToAdd.setCount(setToAdd.getCount()+1);
-                //TODO: Update value in TableView cell
+                if(inPreview)
+                    tvFlashCards.getItems().add(newCard);
+                if(!inPreview)
+                    tvFlashCardsSets.refresh();
 
                 addNext[0] = true;
 
@@ -196,7 +199,7 @@ public class Main extends Application{
 
         dialog.showAndWait();
         if(addNext[0])
-            addFlashCard(setToAdd);
+            addFlashCard(setToAdd, inPreview);
 
     }
 
@@ -253,13 +256,15 @@ public class Main extends Application{
         gpPreview.add(tvFlashCards, 0 ,0, 5, 1);
 
         Button bBack = new Button("Back");
-        bBack.setOnAction(e -> stWindow.setScene(scMenu));
+        bBack.setOnAction(e -> {
+            stWindow.setScene(scMenu);
+            tvFlashCardsSets.refresh();
+        });
         gpPreview.add(bBack, 0, 1);
 
         Button bAdd = new Button("Add");
-        bAdd.setOnAction(e -> addFlashCard(previewSet));
+        bAdd.setOnAction(e -> addFlashCard(previewSet, true));
         gpPreview.add(bAdd, 1, 1);
-        //TODO: Update flash cards in preview after adding new card
 
         Button bDelete = new Button("Delete");
         bDelete.setOnAction(e -> {
