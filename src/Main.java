@@ -1,3 +1,4 @@
+//TODO: Count as ArrayList size; Edit card in preview
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -49,15 +50,13 @@ public class Main extends Application{
         gpMenu.add(bCreate, 0, 1);
 
         Button bDelete = new Button("Delete");
-        bDelete.setOnAction(e -> {
-            FlashCardsSet selected = tvFlashCardsSets.getSelectionModel().getSelectedItem();
-            if(selected != null)
-                deleteSet(selected);
-        });
+        bDelete.setOnAction(e -> deleteSet(tvFlashCardsSets.getSelectionModel().getSelectedItem()));
+        bDelete.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
         gpMenu.add(bDelete, 1, 1);
 
         Button bEdit = new Button("Edit");
-        bEdit.setOnAction(e -> editSet());
+        bEdit.setOnAction(e -> editSet(tvFlashCardsSets.getSelectionModel().getSelectedItem()));
+        bEdit.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
         gpMenu.add(bEdit, 2, 1);
 
         Button bPreview = new Button("Preview");
@@ -215,7 +214,7 @@ public class Main extends Application{
         }
     }
 
-    private void deleteCard(FlashCard card){
+    private void deleteCard(FlashCardsSet set, FlashCard card){
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Flash Cards");
         alert.setHeaderText(null);
@@ -224,19 +223,62 @@ public class Main extends Application{
         Optional<ButtonType> result = alert.showAndWait();
         if(result.get() == ButtonType.OK){
             tvFlashCards.getItems().remove(card);
+            set.getFlashCards().remove(card);
+            set.setCount(set.getCount()-1);
         }
     }
 
-    private void editSet(){
+    private void editSet(FlashCardsSet setToEdit){
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Edit Flash Cards Set");
+        dialog.setHeaderText(null);
 
+        ButtonType bAdd = new ButtonType("Edit", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(bAdd, ButtonType.CANCEL);
+
+        GridPane gpDialog = new GridPane();
+
+        TextField tfName = new TextField(setToEdit.getName());
+        TextField tfDescription = new TextField(setToEdit.getDescription());
+
+        gpDialog.add(new Label("Name:"), 0, 0);
+        gpDialog.add(tfName, 1, 0);
+        gpDialog.add(new Label("Description:"), 0, 1);
+        gpDialog.add(tfDescription, 1, 1);
+
+        Node addButton = dialog.getDialogPane().lookupButton(bAdd);
+        addButton.setDisable(true);
+
+        tfName.textProperty().addListener((observable, oldValue, newValue) -> {
+            addButton.setDisable(newValue.trim().isEmpty());
+        });
+
+        dialog.getDialogPane().setContent(gpDialog);
+
+        dialog.setResultConverter(dialogButton -> {
+            if(dialogButton == bAdd){
+                setToEdit.setName(tfName.getText());
+                setToEdit.setDescription(tfDescription.getText());
+                tvFlashCardsSets.refresh();
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
     }
 
-    private void editCard(){
+    private void editCard(FlashCard cardToEdit){
 
     }
 
     private void previewSet(FlashCardsSet previewSet){
         GridPane gpPreview = new GridPane();
+        gpPreview.add(new Label("FlashCardSet name: "), 0, 0);
+        Label lName = new Label(previewSet.getName());
+        gpPreview.add(lName, 1, 0);
+        gpPreview.add(new Label("FlashCardSet count:"), 2, 0);
+        Label lCount = new Label(previewSet.getCount()+"");
+        gpPreview.add(lCount, 3, 0);
 
         TableColumn<FlashCard, String> tcWord = new TableColumn<>("Word");
         tcWord.setCellValueFactory(new PropertyValueFactory<>("word"));
@@ -253,30 +295,34 @@ public class Main extends Application{
         tvFlashCards.setItems(flashCards);
         tvFlashCards.getColumns().addAll(tcWord, tcTranslation, tcDescription);
 
-        gpPreview.add(tvFlashCards, 0 ,0, 5, 1);
+        gpPreview.add(tvFlashCards, 0 ,1, 5, 1);
 
         Button bBack = new Button("Back");
         bBack.setOnAction(e -> {
             stWindow.setScene(scMenu);
             tvFlashCardsSets.refresh();
         });
-        gpPreview.add(bBack, 0, 1);
+        gpPreview.add(bBack, 0, 2);
 
         Button bAdd = new Button("Add");
-        bAdd.setOnAction(e -> addFlashCard(previewSet, true));
-        gpPreview.add(bAdd, 1, 1);
+        bAdd.setOnAction(e -> {
+            addFlashCard(previewSet, true);
+            lCount.setText(previewSet.getCount()+"");
+        });
+        gpPreview.add(bAdd, 1, 2);
 
         Button bDelete = new Button("Delete");
         bDelete.setOnAction(e -> {
-            FlashCard selected = tvFlashCards.getSelectionModel().getSelectedItem();
-            if(selected != null)
-                deleteCard(selected);
+            deleteCard(previewSet, tvFlashCards.getSelectionModel().getSelectedItem());
+            lCount.setText(previewSet.getCount()+"");
         });
-        gpPreview.add(bDelete, 2, 1);
+        bDelete.disableProperty().bind(Bindings.isEmpty(tvFlashCards.getSelectionModel().getSelectedItems()));
+        gpPreview.add(bDelete, 2, 2);
 
         Button bEdit = new Button("Edit");
-        bEdit.setOnAction(e -> editCard());
-        gpPreview.add(bEdit, 3, 1);
+        bEdit.setOnAction(e -> editCard(tvFlashCards.getSelectionModel().getSelectedItem()));
+        bEdit.disableProperty().bind(Bindings.isEmpty(tvFlashCards.getSelectionModel().getSelectedItems()));
+        gpPreview.add(bEdit, 3, 2);
 
         scPreview= new Scene(gpPreview);
         stWindow.setScene(scPreview);
