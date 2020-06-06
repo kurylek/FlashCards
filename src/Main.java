@@ -115,9 +115,9 @@ public class Main extends Application{
         dialog.setResultConverter(dialogButton -> {
             if(dialogButton == bAdd){
                 if(tfDescription.getLength() > 0){
-                    newSet[0] = new FlashCardsSet(tfName.getText(), tfDescription.getText());
+                    newSet[0] = new FlashCardsSet(tfName.getText().trim(), tfDescription.getText().trim());
                 }else{
-                    newSet[0] = new FlashCardsSet(tfName.getText());
+                    newSet[0] = new FlashCardsSet(tfName.getText().trim());
                 }
 
                 tvFlashCardsSets.getItems().add(newSet[0]);
@@ -178,9 +178,9 @@ public class Main extends Application{
             if(dialogButton == bAdd){
                 FlashCard newCard;
                 if(tfDescription.getLength() > 0){
-                    newCard = new FlashCard(tfWord.getText(), tfTranslation.getText(), tfDescription.getText());
+                    newCard = new FlashCard(tfWord.getText().trim(), tfTranslation.getText().trim(), tfDescription.getText().trim());
                 }else{
-                    newCard = new FlashCard(tfWord.getText(), tfTranslation.getText());
+                    newCard = new FlashCard(tfWord.getText().trim(), tfTranslation.getText().trim());
                 }
 
                 setToAdd.getFlashCards().add(newCard);
@@ -257,8 +257,8 @@ public class Main extends Application{
 
         dialog.setResultConverter(dialogButton -> {
             if(dialogButton == bAdd){
-                setToEdit.setName(tfName.getText());
-                setToEdit.setDescription(tfDescription.getText());
+                setToEdit.setName(tfName.getText().trim());
+                setToEdit.setDescription(tfDescription.getText().trim());
                 tvFlashCardsSets.refresh();
             }
             return null;
@@ -268,7 +268,58 @@ public class Main extends Application{
     }
 
     private void editCard(FlashCard cardToEdit){
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Edit Flash Card");
+        dialog.setHeaderText(null);
 
+        ButtonType bEdit = new ButtonType("Edit", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(bEdit, ButtonType.CANCEL);
+
+        GridPane gpDialog = new GridPane();
+
+        TextField tfWord = new TextField(cardToEdit.getWord());
+        TextField tfTranslation = new TextField(cardToEdit.getTranslation());
+        TextField tfDescription = new TextField(cardToEdit.getDescription());
+
+        gpDialog.add(new Label("Word:"), 0, 0);
+        gpDialog.add(tfWord, 1, 0);
+        gpDialog.add(new Label("Translation:"), 0, 1);
+        gpDialog.add(tfTranslation, 1, 1);
+        gpDialog.add(new Label("Description:"), 0, 2);
+        gpDialog.add(tfDescription, 1, 2);
+
+        AtomicBoolean tfWordIsEmpty = new AtomicBoolean(tfWord.getText().trim().length() == 0);
+        AtomicBoolean tfTranIsEmpty = new AtomicBoolean(tfTranslation.getText().trim().length() == 0);
+
+        Node editButton = dialog.getDialogPane().lookupButton(bEdit);
+        //editButton.setDisable(tfWordIsEmpty.get() && tfTranIsEmpty.get());
+
+        tfWord.textProperty().addListener((observable, oldValue, newValue) -> {
+            tfWordIsEmpty.set(tfWord.getText().trim().length() == 0);
+            editButton.setDisable(tfWordIsEmpty.get() || tfTranIsEmpty.get());
+
+        });
+        tfTranslation.textProperty().addListener((observable, oldValue, newValue) -> {
+            tfTranIsEmpty.set(tfTranslation.getText().trim().length() == 0);
+            editButton.setDisable(tfWordIsEmpty.get() || tfTranIsEmpty.get());
+        });
+
+        dialog.getDialogPane().setContent(gpDialog);
+
+        dialog.setResultConverter(dialogButton -> {
+            if(dialogButton == bEdit){
+                cardToEdit.setWord(tfWord.getText().trim());
+                cardToEdit.setTranslation(tfTranslation.getText().trim());
+                if(tfDescription.getText() == null)
+                    cardToEdit.setDescription("");
+                else
+                    cardToEdit.setDescription(tfDescription.getText().trim());
+                tvFlashCards.refresh();
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
     }
 
     private void previewSet(FlashCardsSet previewSet){
