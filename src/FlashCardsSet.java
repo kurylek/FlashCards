@@ -45,4 +45,13 @@ public class FlashCardsSet{
     public ArrayList<FlashCard> getFlashCards(){
         return flashCards;
     }
+
+    @Override
+    public String toString(){
+        String mess= "";
+        for(FlashCard i : flashCards){
+            mess+=i.getWord()+" ";
+        }
+        return mess;
+    }
 }

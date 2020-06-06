@@ -1,4 +1,4 @@
-//TODO: Count as ArrayList size; Edit card in preview
+//TODO: Count as ArrayList size
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -9,7 +9,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -65,7 +66,23 @@ public class Main extends Application{
         gpMenu.add(bPreview, 3, 1);
 
         Button bStart = new Button("Start");
-        bStart.setOnAction(e -> startSet());
+        bStart.setOnAction(e -> {
+            FlashCardsSet selectedSet = tvFlashCardsSets.getSelectionModel().getSelectedItem();
+            if(selectedSet.getCount() == 0){
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Empty set");
+                alert.setHeaderText(null);
+                alert.setContentText("This set is empty!\nDo you want to add new FlashCards?");
+
+                Optional<ButtonType> result = alert.showAndWait();
+                if(result.get() == ButtonType.OK){
+                    addFlashCard(selectedSet, false);
+                }
+            }else{
+                startSet(selectedSet);
+            }
+        });
+        bStart.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
         gpMenu.add(bStart, 4, 1);
 
 
@@ -247,7 +264,7 @@ public class Main extends Application{
         gpDialog.add(tfDescription, 1, 1);
 
         Node addButton = dialog.getDialogPane().lookupButton(bAdd);
-        addButton.setDisable(true);
+        //addButton.setDisable(true); //Set has always name
 
         tfName.textProperty().addListener((observable, oldValue, newValue) -> {
             addButton.setDisable(newValue.trim().isEmpty());
@@ -288,11 +305,10 @@ public class Main extends Application{
         gpDialog.add(new Label("Description:"), 0, 2);
         gpDialog.add(tfDescription, 1, 2);
 
-        AtomicBoolean tfWordIsEmpty = new AtomicBoolean(tfWord.getText().trim().length() == 0);
-        AtomicBoolean tfTranIsEmpty = new AtomicBoolean(tfTranslation.getText().trim().length() == 0);
+        AtomicBoolean tfWordIsEmpty = new AtomicBoolean(false);
+        AtomicBoolean tfTranIsEmpty = new AtomicBoolean(false);
 
         Node editButton = dialog.getDialogPane().lookupButton(bEdit);
-        //editButton.setDisable(tfWordIsEmpty.get() && tfTranIsEmpty.get());
 
         tfWord.textProperty().addListener((observable, oldValue, newValue) -> {
             tfWordIsEmpty.set(tfWord.getText().trim().length() == 0);
@@ -380,7 +396,59 @@ public class Main extends Application{
 
     }
 
-    private void startSet(){
+    private void startSet(FlashCardsSet setToPlay){
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Choose flash cards amount");
+        dialog.setHeaderText(null);
+
+        ButtonType bTen = new ButtonType("10", ButtonBar.ButtonData.OK_DONE);
+        ButtonType bTwenty = new ButtonType("20", ButtonBar.ButtonData.OK_DONE);
+        ButtonType bAll = new ButtonType("All", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(bTen, bTwenty, bAll, ButtonType.CANCEL);
+
+        GridPane gpDialog = new GridPane();
+
+        gpDialog.add(new Label("You have chosen set "+setToPlay.getName()), 0, 0);
+        gpDialog.add(new Label("This set has "+setToPlay.getCount()+" cards"), 0, 1);
+        gpDialog.add(new Label("Choose amount of playinh cards."), 0, 2);
+
+        Node tenButton = dialog.getDialogPane().lookupButton(bTen);
+        Node twentyButton = dialog.getDialogPane().lookupButton(bTwenty);
+        if(setToPlay.getCount() < 10)
+            tenButton.setDisable(true);
+        if(setToPlay.getCount() < 20)
+            twentyButton.setDisable(true);
+
+        dialog.getDialogPane().setContent(gpDialog);
+
+        dialog.setResultConverter(dialogButton -> {
+            if(dialogButton == bTen){
+                game(selectCards(setToPlay, 10));
+            }else if(dialogButton == bTwenty){
+                game(selectCards(setToPlay, 10));
+            }else if(dialogButton == bAll){
+                game(selectCards(setToPlay, setToPlay.getCount()));
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private ArrayList<FlashCard> selectCards(FlashCardsSet set, int amount){
+        ArrayList<FlashCard> flashCards = new ArrayList<>(set.getFlashCards());
+        ArrayList<FlashCard> cardsToPlay = new ArrayList<>();
+        Collections.shuffle(flashCards);
+        if(flashCards.size() == amount){
+            cardsToPlay = flashCards;
+        }else{
+            //choose amount of flash cards randomly from flashCards
+        }
+
+        return cardsToPlay;
+    }
+
+    private void game(ArrayList<FlashCard> flashCards){
 
     }
 }
