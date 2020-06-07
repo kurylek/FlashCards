@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class Main extends Application{
@@ -28,6 +29,8 @@ public class Main extends Application{
     @Override
     public void start(Stage stage) throws Exception{
         stWindow = stage;
+        stWindow.setTitle("FlashCards");
+
         GridPane gpMenu = new GridPane();
 
         TableColumn<FlashCardsSet, String> tcName = new TableColumn<>("Name");
@@ -393,7 +396,6 @@ public class Main extends Application{
 
         scPreview= new Scene(gpPreview);
         stWindow.setScene(scPreview);
-
     }
 
     private void startSet(FlashCardsSet setToPlay){
@@ -423,11 +425,11 @@ public class Main extends Application{
 
         dialog.setResultConverter(dialogButton -> {
             if(dialogButton == bTen){
-                game(selectCards(setToPlay, 10));
+                game(setToPlay, selectCards(setToPlay, 10));
             }else if(dialogButton == bTwenty){
-                game(selectCards(setToPlay, 10));
+                game(setToPlay, selectCards(setToPlay, 20));
             }else if(dialogButton == bAll){
-                game(selectCards(setToPlay, setToPlay.getCount()));
+                game(setToPlay, selectCards(setToPlay, setToPlay.getCount()));
             }
             return null;
         });
@@ -442,13 +444,76 @@ public class Main extends Application{
         if(flashCards.size() == amount){
             cardsToPlay = flashCards;
         }else{
-            //choose amount of flash cards randomly from flashCards
+            for(int i=0; i<amount; i++){
+                cardsToPlay.add(flashCards.get(i));
+            }
         }
-
         return cardsToPlay;
     }
 
-    private void game(ArrayList<FlashCard> flashCards){
+    private void game(FlashCardsSet playingSet, ArrayList<FlashCard> flashCards){
+        GridPane gpGame = new GridPane();
 
+        AtomicInteger score = new AtomicInteger();
+        AtomicInteger current = new AtomicInteger();
+
+        gpGame.add(new Label("Your score: "), 0, 0);
+        Label lScore = new Label("0/"+flashCards.size());
+        gpGame.add(lScore, 1, 0);
+
+        Label lCurrent = new Label("0/"+flashCards.size());
+        gpGame.add(lCurrent, 3, 0);
+
+        Label lPrevious = new Label();
+        gpGame.add(lPrevious, 0, 1);
+
+        gpGame.add(new Label("Word: "), 0, 2);
+        Label lWord = new Label(flashCards.get(current.get()).getWord());
+        gpGame.add(lWord, 1, 2);
+
+        gpGame.add(new Label("Translation: "), 0, 3);
+        TextField tfTranslation = new TextField();
+        gpGame.add(tfTranslation, 1, 3);
+
+        gpGame.add(new Label("Description: "), 0, 4);
+        Label lDescription = new Label(flashCards.get(current.get()).getDescription());
+        gpGame.add(lDescription, 1, 4);
+
+        Button bHint = new Button("Hint");
+        bHint.setOnAction(e -> {
+            //Show letters in random order/Show letter count
+        });
+        gpGame.add(bHint, 0, 5);
+
+        Button bConfirm = new Button("Confirm");
+        bConfirm.setOnAction(e -> {
+            if(tfTranslation.getText().toLowerCase().equals(flashCards.get(current.get()).getTranslation())){
+                score.getAndIncrement();
+                lScore.setText(score.get()+"/"+flashCards.size());
+                lPrevious.setText("Correct!");
+            }else{
+                lPrevious.setText("Wrong, correct answer was `"+flashCards.get(current.get()).getTranslation()+"`");
+            }
+            current.getAndIncrement();
+            lCurrent.setText(current.get()+"/"+flashCards.size());
+            if(current.get()<10){
+                lWord.setText(flashCards.get(current.get()).getWord());
+                lDescription.setText(flashCards.get(current.get()).getDescription());
+                tfTranslation.setText("");
+            }else{
+                bConfirm.setDisable(true);
+                bHint.setDisable(true);
+            }
+        });
+        gpGame.add(bConfirm, 1, 5);
+
+
+        Button bBack = new Button("Back");
+        bBack.setOnAction(e -> stWindow.setScene(scMenu));
+        //Ask if want to finish game
+        gpGame.add(bBack, 0, 6);
+
+        scGame= new Scene(gpGame);
+        stWindow.setScene(scGame);
     }
 }

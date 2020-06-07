@@ -11,12 +11,19 @@ public class FlashCardsSet{
         this.description = description;
         this.count = 0;
         this.flashCards = new ArrayList<FlashCard>();
+        init();
     }
 
     public FlashCardsSet(String name){
         this(name, null);
     }
 
+    private void init(){
+        for(int i=0; i<15; i++){
+            this.flashCards.add(new FlashCard(String.valueOf(i), String.valueOf(i)));
+        }
+        this.count = this.flashCards.size();
+    }
 
     public String getName(){
         return name;
