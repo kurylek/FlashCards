@@ -475,13 +475,32 @@ public class Main extends Application{
         TextField tfTranslation = new TextField();
         gpGame.add(tfTranslation, 1, 3);
 
+        Label lHint = new Label();
+        gpGame.add(lHint, 2, 3);
+
         gpGame.add(new Label("Description: "), 0, 4);
         Label lDescription = new Label(flashCards.get(current.get()).getDescription());
         gpGame.add(lDescription, 1, 4);
 
+        AtomicInteger hints = new AtomicInteger(2);
         Button bHint = new Button("Hint");
         bHint.setOnAction(e -> {
-            //Show letters in random order/Show letter count
+            if(hints.get() == 2){
+                lHint.setText("Hints: This word have "+flashCards.get(current.get()).getTranslation().length()+" letters.");
+                hints.getAndDecrement();
+            }else{
+                ArrayList<Character> letters = new ArrayList<>();
+                for(char c : flashCards.get(current.get()).getTranslation().toCharArray()){
+                    letters.add(c);
+                }
+                Collections.shuffle(letters);
+                String hint = "";
+                for(char c : letters){
+                    hint += c+" ";
+                }
+                lHint.setText(lHint.getText()+"; Use these letters: "+hint);
+                bHint.setDisable(true);
+            }
         });
         gpGame.add(bHint, 0, 5);
 
@@ -500,6 +519,9 @@ public class Main extends Application{
                 lWord.setText(flashCards.get(current.get()).getWord());
                 lDescription.setText(flashCards.get(current.get()).getDescription());
                 tfTranslation.setText("");
+                lHint.setText("");
+                bHint.setDisable(false);
+                hints.set(2);
             }else{
                 bConfirm.setDisable(true);
                 bHint.setDisable(true);
