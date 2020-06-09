@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class FlashCardsSet{
+public class FlashCardsSet implements Serializable{
     private String name;
     private String description;
     private int count;
@@ -55,10 +56,6 @@ public class FlashCardsSet{
 
     @Override
     public String toString(){
-        String mess= "";
-        for(FlashCard i : flashCards){
-            mess+=i.getWord()+" ";
-        }
-        return mess;
+        return "Name:" + name + "\nDescription: " + description + "\nCount: " + count + "\nFlashCards: " + flashCards;
     }
 }

@@ -9,6 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
@@ -25,6 +26,7 @@ public class Main extends Application{
     private Scene scMenu, scPreview, scGame;
     private TableView<FlashCardsSet> tvFlashCardsSets;
     private TableView<FlashCard> tvFlashCards;
+    private boolean unsavedChanges = false;
 
     @Override
     public void start(Stage stage) throws Exception{
@@ -43,7 +45,7 @@ public class Main extends Application{
         tcCount.setCellValueFactory(new PropertyValueFactory<>("count"));
 
         tvFlashCardsSets = new TableView();
-        tvFlashCardsSets.setItems(flashCardsSets());
+        loadSets();
         tvFlashCardsSets.getColumns().addAll(tcName, tcDescription, tcCount);
 
         gpMenu.add(tvFlashCardsSets, 0 ,0, 5, 1);
@@ -52,6 +54,8 @@ public class Main extends Application{
         Button bCreate = new Button("Create");
         bCreate.setOnAction(e -> addNewSet());
         gpMenu.add(bCreate, 0, 1);
+
+        //TODO: Add save button
 
         Button bDelete = new Button("Delete");
         bDelete.setOnAction(e -> deleteSet(tvFlashCardsSets.getSelectionModel().getSelectedItem()));
@@ -92,15 +96,51 @@ public class Main extends Application{
         scMenu= new Scene(gpMenu);
         stWindow.setScene(scMenu);
         stWindow.show();
+
     }
 
-    public ObservableList<FlashCardsSet> flashCardsSets(){
-        ObservableList<FlashCardsSet> flashCardsSets = FXCollections.observableArrayList();
-        flashCardsSets.add(new FlashCardsSet("A","Aa"));
-        flashCardsSets.add(new FlashCardsSet("B","Bb"));
-        return flashCardsSets;
+    @Override
+    public void stop() throws Exception{
+        if(unsavedChanges){
+            saveSets();
+            //TODO: Ask if want to save
+        }
+        System.out.println("Wychodze!");
+        super.stop();
     }
 
+    private void loadSets() throws Exception{
+        File fSets = new File("FlashCardsSets");
+        if(fSets.exists() && !fSets.isDirectory()){
+            FileInputStream fi = new FileInputStream(fSets);
+            ObjectInputStream oi = new ObjectInputStream(fi);
+            FlashCardsSet input;
+
+            while(true){
+                try{
+                    input = (FlashCardsSet) oi.readObject();
+                    tvFlashCardsSets.getItems().add(input);
+                }catch(IOException e){
+                    oi.close();
+                    fi.close();
+                    break;
+                }
+            }
+        }
+    }
+
+    private void saveSets() throws Exception{
+        FileOutputStream fo = new FileOutputStream(new File("FlashCardsSets"));
+        ObjectOutputStream oo = new ObjectOutputStream(fo);
+
+        for(FlashCardsSet toSave : tvFlashCardsSets.getItems()){
+            oo.writeObject(toSave);
+        }
+        oo.close();
+        fo.close();
+
+        unsavedChanges = false;
+    }
 
     private void addNewSet(){
         boolean[] setAdded = {false};
@@ -143,6 +183,7 @@ public class Main extends Application{
                 tvFlashCardsSets.getItems().add(newSet[0]);
 
                 setAdded[0] = true;
+                unsavedChanges = true;
             }
             return null;
         });
@@ -211,7 +252,7 @@ public class Main extends Application{
                     tvFlashCardsSets.refresh();
 
                 addNext[0] = true;
-
+                unsavedChanges = true;
             }
             return null;
         });
@@ -231,6 +272,7 @@ public class Main extends Application{
         Optional<ButtonType> result = alert.showAndWait();
         if(result.get() == ButtonType.OK){
             tvFlashCardsSets.getItems().remove(set);
+            unsavedChanges = true;
         }
     }
 
@@ -245,6 +287,7 @@ public class Main extends Application{
             tvFlashCards.getItems().remove(card);
             set.getFlashCards().remove(card);
             set.setCount(set.getCount()-1);
+            unsavedChanges = true;
         }
     }
 
@@ -279,6 +322,7 @@ public class Main extends Application{
             if(dialogButton == bAdd){
                 setToEdit.setName(tfName.getText().trim());
                 setToEdit.setDescription(tfDescription.getText().trim());
+                unsavedChanges = true;
                 tvFlashCardsSets.refresh();
             }
             return null;
@@ -334,6 +378,7 @@ public class Main extends Application{
                 else
                     cardToEdit.setDescription(tfDescription.getText().trim());
                 tvFlashCards.refresh();
+                unsavedChanges = true;
             }
             return null;
         });
@@ -373,6 +418,8 @@ public class Main extends Application{
             tvFlashCardsSets.refresh();
         });
         gpPreview.add(bBack, 0, 2);
+
+        //TODO: Add save button
 
         Button bAdd = new Button("Add");
         bAdd.setOnAction(e -> {

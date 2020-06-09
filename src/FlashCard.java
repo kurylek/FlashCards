@@ -1,4 +1,6 @@
-public class FlashCard{
+import java.io.Serializable;
+
+public class FlashCard implements Serializable{
     private String word;
     private String translation;
     private String description;
@@ -35,5 +37,10 @@ public class FlashCard{
 
     public void setDescription(String description){
         this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return "Word:" + word + "\nTranslation: " + translation + "\nDescription: " + description;
     }
 }
