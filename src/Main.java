@@ -27,6 +27,7 @@ public class Main extends Application{
     private TableView<FlashCardsSet> tvFlashCardsSets;
     private TableView<FlashCard> tvFlashCards;
     private boolean unsavedChanges = false;
+    private Button bSave;
 
     @Override
     public void start(Stage stage) throws Exception{
@@ -55,8 +56,6 @@ public class Main extends Application{
         bCreate.setOnAction(e -> addNewSet());
         gpMenu.add(bCreate, 0, 1);
 
-        //TODO: Add save button
-
         Button bDelete = new Button("Delete");
         bDelete.setOnAction(e -> deleteSet(tvFlashCardsSets.getSelectionModel().getSelectedItem()));
         bDelete.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
@@ -67,10 +66,15 @@ public class Main extends Application{
         bEdit.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
         gpMenu.add(bEdit, 2, 1);
 
+        bSave = new Button("Save");
+        bSave.setOnAction(e -> saveSets());
+        gpMenu.add(bSave, 3, 1);
+        bSave.setDisable(true);
+
         Button bPreview = new Button("Preview");
         bPreview.setOnAction(e -> previewSet(tvFlashCardsSets.getSelectionModel().getSelectedItem()));
         bPreview.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
-        gpMenu.add(bPreview, 3, 1);
+        gpMenu.add(bPreview, 4, 1);
 
         Button bStart = new Button("Start");
         bStart.setOnAction(e -> {
@@ -90,7 +94,7 @@ public class Main extends Application{
             }
         });
         bStart.disableProperty().bind(Bindings.isEmpty(tvFlashCardsSets.getSelectionModel().getSelectedItems()));
-        gpMenu.add(bStart, 4, 1);
+        gpMenu.add(bStart, 5, 1);
 
 
         scMenu= new Scene(gpMenu);
@@ -129,17 +133,20 @@ public class Main extends Application{
         }
     }
 
-    private void saveSets() throws Exception{
-        FileOutputStream fo = new FileOutputStream(new File("FlashCardsSets"));
-        ObjectOutputStream oo = new ObjectOutputStream(fo);
+    private void saveSets(){
+        try {
+            FileOutputStream fo = new FileOutputStream(new File("FlashCardsSets"));
+            ObjectOutputStream oo = new ObjectOutputStream(fo);
 
-        for(FlashCardsSet toSave : tvFlashCardsSets.getItems()){
-            oo.writeObject(toSave);
-        }
-        oo.close();
-        fo.close();
+            for(FlashCardsSet toSave : tvFlashCardsSets.getItems()){
+                oo.writeObject(toSave);
+            }
+            oo.close();
+            fo.close();
 
-        unsavedChanges = false;
+            unsavedChanges = false;
+            bSave.setDisable(true);
+        }catch (IOException ignore){}
     }
 
     private void addNewSet(){
@@ -184,6 +191,7 @@ public class Main extends Application{
 
                 setAdded[0] = true;
                 unsavedChanges = true;
+                bSave.setDisable(false);
             }
             return null;
         });
@@ -253,6 +261,7 @@ public class Main extends Application{
 
                 addNext[0] = true;
                 unsavedChanges = true;
+                bSave.setDisable(false);
             }
             return null;
         });
@@ -273,6 +282,7 @@ public class Main extends Application{
         if(result.get() == ButtonType.OK){
             tvFlashCardsSets.getItems().remove(set);
             unsavedChanges = true;
+            bSave.setDisable(false);
         }
     }
 
@@ -288,6 +298,7 @@ public class Main extends Application{
             set.getFlashCards().remove(card);
             set.setCount(set.getCount()-1);
             unsavedChanges = true;
+            bSave.setDisable(false);
         }
     }
 
@@ -323,6 +334,7 @@ public class Main extends Application{
                 setToEdit.setName(tfName.getText().trim());
                 setToEdit.setDescription(tfDescription.getText().trim());
                 unsavedChanges = true;
+                bSave.setDisable(false);
                 tvFlashCardsSets.refresh();
             }
             return null;
@@ -379,6 +391,7 @@ public class Main extends Application{
                     cardToEdit.setDescription(tfDescription.getText().trim());
                 tvFlashCards.refresh();
                 unsavedChanges = true;
+                bSave.setDisable(false);
             }
             return null;
         });
@@ -418,8 +431,6 @@ public class Main extends Application{
             tvFlashCardsSets.refresh();
         });
         gpPreview.add(bBack, 0, 2);
-
-        //TODO: Add save button
 
         Button bAdd = new Button("Add");
         bAdd.setOnAction(e -> {
