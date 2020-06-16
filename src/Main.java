@@ -106,8 +106,15 @@ public class Main extends Application{
     @Override
     public void stop() throws Exception{
         if(unsavedChanges){
-            saveSets();
-            //TODO: Ask if want to save
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Warning: Unsaved changes!");
+            alert.setHeaderText(null);
+            alert.setContentText("Do you want to save unsaved changes?");
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if(result.get() == ButtonType.OK){
+                saveSets();
+            }
         }
         System.out.println("Wychodze!");
         super.stop();
